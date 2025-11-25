@@ -132,4 +132,3 @@ When running in `--dry-run` or live mode, FlatSource provides a transparent conf
 ## ⚖️ License
 
 Open Source (MIT).
-```

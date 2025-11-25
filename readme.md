@@ -1,93 +1,135 @@
-# FlatSource: Code Context Aggregator
+# FlatSource: Intelligent Code Context Aggregator
 
-**FlatSource** is a robust CLI automation tool designed to flatten complex project directories into a linear format. It is specifically engineered for preparing codebases for Large Language Model (LLM) context windows (e.g., ChatGPT, Claude) or for simplifying code auditing processes.
+![Version](https://img.shields.io/badge/version-1.3.0-blue) ![Python](https://img.shields.io/badge/python-3.8%2B-green) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-It recursively scans directories, respects exclusion patterns, and migrates files to a "flat" safe-directory with metadata headers, ensuring no data loss and zero impact on the source code.
+**FlatSource** is a production-grade CLI automation tool designed to "flatten" complex project directories into a linear, readable format.
+
+It is specifically engineered for **LLM Context Injection** (ChatGPT/Claude) and **Code Auditing**, allowing developers to convert entire repositories into a safe, metadata-tagged format without manual copy-pasting.
 
 ---
 
-## 🚀 Key Features
+## 🚀 Key Features (v1.3.0)
 
-*   **🛡️ Fail-Safe Architecture:** Read-only access to source files. The script terminates immediately upon any error (permission/IO) to preserve data integrity.
-*   **🚫 Collision Handling:** Automatically resolves filename conflicts (e.g., `index.tsx` vs `utils/index.tsx`) by appending counters, ensuring no file is ever overwritten.
-*   **📝 Metadata Injection:** Injects a standard header into every output file containing the original relative path and a migration timestamp.
-*   **🧪 Dry Run Mode:** Simulate the entire process without writing to the disk to verify paths and exclusion logic.
-*   **📊 Progress Feedback:** Integrated `tqdm` progress bar for large repositories (gracefully degrades if dependency is missing).
-*   **✨ Type-Hinted & Modern:** Written in modern Python 3 with strict typing conventions.
+*   **🧠 Smart Extension Mapping:** Automatically maps input extensions to output extensions.
+    *   *1-to-1 Mapping:* `.js` → `.txt`, `.css` → `.css`
+    *   *Many-to-1 Mapping:* `.js` & `.ts` → `.txt`
+    *   *Auto-Fallback:* Any input without a paired output defaults to `.txt` automatically.
+*   **🔮 Visual Configuration Plan:** Prints a detailed "Mappings Table" before execution, showing exactly how extensions will be converted (Terraform-style planning).
+*   **🛡️ Fail-Safe Architecture:**
+    *   **Read-Only Source:** Never opens source files in write mode.
+    *   **Collision Handling:** Auto-renames duplicates (e.g., `index.js` → `index_1.txt`) to prevent overwriting.
+    *   **Stop-on-Error:** terminates immediately on permission/IO errors to preserve data integrity.
+*   **📝 Metadata Injection:** Stamps every file with a header containing the `ORIGINAL_PATH` and `ARCHIVED` timestamp.
+*   **🧪 Dry Run Simulation:** Verify exclusion patterns and file counts without touching the disk.
 
 ---
 
 ## 📦 Installation
 
-No complex build steps required. Just ensure you have Python 3 installed.
-
-For the best experience (Progress Bar support), install `tqdm`:
+### Prerequisites
+*   Python 3.8+
+*   `tqdm` (Optional, for progress bars)
 
 ```bash
 pip install tqdm
 ```
 
-*(Note: The script will run fine without `tqdm`, falling back to a standard console log.)*
+### Option A: Quick Run (Local)
+Just run the script directly:
+```bash
+python pro_scan.py --help
+```
+
+### Option B: Global Install (Recommended)
+To use the command `pro_scan` from any terminal window:
+
+1.  Run the included setup script (if available) or create a `pro_scan.bat` file in the script directory:
+    ```bat
+    @echo off
+    python "%~dp0pro_scan.py" %*
+    ```
+2.  Add the script directory to your Windows **System PATH**.
 
 ---
 
 ## 🛠️ Usage
 
-### Basic Syntax
 ```bash
-python pro_scan.py --dest <OUTPUT_DIR> --in-ext <INPUT_EXT> --out-ext <OUTPUT_EXT> [OPTIONS]
+pro_scan --dest <DIR> --in-ext <EXT LIST> --out-ext <EXT LIST> [OPTIONS]
 ```
 
-### The "Helper" Commands (Flags)
+### Arguments
 
-| Flag | Description |
-| :--- | :--- |
-| `--help` | Shows the built-in manual with all available commands and examples. |
-| `--dry-run` | **Safe Mode.** Scans files and prints what *would* happen, but creates no files. |
-| `--exclude` | A list of folder names or wildcard patterns to ignore (e.g., `node_modules`). |
-| `--root` | Specify a different starting folder (defaults to current directory). |
+| Flag | Required | Description |
+| :--- | :---: | :--- |
+| `--dest` | ✅ | Destination directory for the flattened files. |
+| `--in-ext` | ✅ | List of input extensions to scan (e.g., `js ts css`). |
+| `--out-ext` | ✅ | List of output extensions. Maps to inputs by order. |
+| `--exclude` | ❌ | Folder patterns to ignore (e.g., `node_modules .git`). |
+| `--root` | ❌ | Root directory to scan (Default: Current Dir). |
+| `--dry-run` | ❌ | Simulates the process without writing files. |
+| `-v` / `--version` | ❌ | specific version info. |
 
 ---
 
-## 💡 Examples
+## 💡 Advanced Examples
 
-### 1. The "Safety First" Check (Dry Run)
-Before moving files, see how many files will be touched without actually doing it.
+### 1. The "Smart Fallback" (Mixed Output)
+You want to keep CSS files as `.css`, but convert everything else (EJS, JS, HTML) to `.txt`.
+
 ```bash
-python pro_scan.py --dest ./backup --in-ext tsx --out-ext txt --exclude node_modules --dry-run
+pro_scan --dest ./backup --in-ext ejs js css html --out-ext txt txt css
 ```
 
-### 2. React/Next.js to Text for LLM
-Flatten a React project, ignoring heavy folders and git metadata.
+**How FlatSource interprets this:**
+*   `.ejs` ➜ `.txt` (Mapped)
+*   `.js`  ➜ `.txt` (Mapped)
+*   `.css` ➜ `.css` (Mapped)
+*   `.html` ➜ `.txt` **(Auto-Fallback)**
+
+### 2. Strict 1-to-1 Mapping
+Keep original formats for specific files.
 ```bash
-python pro_scan.py --dest ./llm_context --in-ext tsx --out-ext txt --exclude node_modules .git .next dist
+pro_scan --dest ./audit --in-ext py js --out-ext py js
 ```
 
-### 3. Solidity Smart Contract Audit
-Gather all `.sol` files into a single folder for manual review.
+### 3. The "Convert All" (Classic Mode)
+Flatten an entire web project into text files for an LLM.
 ```bash
-python pro_scan.py --dest ./audit_prep --in-ext sol --out-ext txt --exclude build tests
-```
-
-### 4. Advanced Wildcards
-Exclude any folder starting with `test` or `mock`.
-```bash
-# Note: Wrap wildcards in quotes on Linux/Mac
-python pro_scan.py --dest ./output --in-ext py --out-ext txt --exclude "test*" "mock*"
+pro_scan --dest ./llm_context --in-ext js ts jsx tsx css html --out-ext txt --exclude node_modules dist
 ```
 
 ---
 
-## 🔍 How It Works
+## 🔍 Visual Verification
 
-1.  **Scan:** Recursively walks the directory tree from `--root`.
-2.  **Filter:** Removes directories matching `--exclude` patterns **before** entering them (efficiency optimization).
-3.  **Read:** Opens source files in `r` (Read-Only) mode.
-4.  **Header:** Generates a comment based on output extension:
-    *   `// ORIGINAL_PATH: src/App.tsx | ARCHIVED: 2023-10-27`
-5.  **Write:** Saves to `--dest`. If `App.txt` exists, it saves as `App_1.txt`.
+When running in `--dry-run` or live mode, FlatSource provides a transparent configuration block so you trust the execution:
+
+```text
+[CONFIGURATION]
+ Mode:       [DRY RUN - SIMULATION]
+ Root:       D:\GITHUB\cryptonium.cloud
+ Dest:       D:\GITHUB\cryptonium.cloud\backup
+ Excluding:  ['node_modules', '.env', 'venv']
+ Mappings:
+   .ejs     -> .txt
+   .js      -> .txt
+   .css     -> .css
+   .html    -> .txt
+```
+
+---
+
+## 🗓️ Recommended Workflow for Code Auditing
+
+1.  **Visualize:** Use `tree` or `ls` to identify heavy folders to exclude.
+2.  **Simulate:** Run `pro_scan ... --dry-run` to verify your extension mappings and exclusion logic.
+3.  **Execute:** Run the command without the dry-run flag.
+4.  **Ingest:** Drag and drop the flattened files into your LLM or auditing tool.
 
 ---
 
 ## ⚖️ License
-Open Source. Feel free to use and modify for your personal workflow.
+
+Open Source (MIT).
+```
